@@ -1,0 +1,6 @@
+#ifndef INCLUDE_PHOTOS_H
+#define INCLUDE_PHOTOS_H
+
+//#define INCLUDE_PHOTOS_IN_BUILD
+
+#endif
