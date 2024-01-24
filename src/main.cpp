@@ -1,5 +1,4 @@
-
-#define PROGMEM
+#include <Arduino.h>
 
 #include "MapScreen_T4.h"
 
