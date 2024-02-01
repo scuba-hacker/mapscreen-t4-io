@@ -11,10 +11,10 @@
 //#include <lvgl.h>
 
 //#include "Fonts/GFXFF/FreeSansBold24pt7b.h"
-#include "Fonts/GFXFF/FreeSansBoldOblique24pt7b.h"
+//#include "Fonts/GFXFF/FreeSansBoldOblique24pt7b.h"
 //#include "Final_Frontier_28.h"
-#include "NotoSansBold36.h"
-#include "NotoSansMonoSCB20.h"
+//#include "fonts/NotoSansBold36.h"
+#include "fonts/NotoSansMonoSCB20.h"
 //#include "Fonts/Custom/Yellowtail_32.h"
 
 // .pio/libdeps/T-Display-AMOLED/TFT_eSPI/Fonts/GFXFF/FreeSansBold24pt7b.h
@@ -34,12 +34,12 @@ extern const unsigned short bride_600x342[];
 extern const unsigned short Colorful_590x450[];
 extern const unsigned short lion_600x400[];
 extern const unsigned short visualCheck_410x304[];
-
+/*
 // only test the build of the M5 class
 #include <M5StickCPlus.h>
 #include <MapScreen_M5.h>
 std::unique_ptr<MapScreen_M5> mapScreenM5;
-
+*/
 #include <memory.h>
 #include "esp_heap_caps.h"
 
@@ -77,7 +77,7 @@ void setup()
 
   amoled.begin();
   amoled.setBrightness(255);
-  mapScreen.reset(new MapScreen_T4(&tft,&amoled));
+  mapScreen.reset(new MapScreen_T4(tft,amoled));
 
   mapScreen->setDrawAllFeatures(true);
 
