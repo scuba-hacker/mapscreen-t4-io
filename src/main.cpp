@@ -21,7 +21,7 @@
 
 TFT_eSPI tft = TFT_eSPI();
 LilyGo_AMOLED amoled;
-std::unique_ptr<MapScreen_T4> mapScreen;
+std::unique_ptr<MapScreen_T4> mapScreenT4;
 
 extern const unsigned short lily_wraysbury_all[];
 extern const unsigned short lily_wraysbury_N[];
@@ -34,12 +34,12 @@ extern const unsigned short bride_600x342[];
 extern const unsigned short Colorful_590x450[];
 extern const unsigned short lion_600x400[];
 extern const unsigned short visualCheck_410x304[];
-/*
+
 // only test the build of the M5 class
 #include <M5StickCPlus.h>
 #include <MapScreen_M5.h>
 std::unique_ptr<MapScreen_M5> mapScreenM5;
-*/
+
 #include <memory.h>
 #include "esp_heap_caps.h"
 
@@ -77,9 +77,9 @@ void setup()
 
   amoled.begin();
   amoled.setBrightness(255);
-  mapScreen.reset(new MapScreen_T4(tft,amoled));
+  mapScreenT4.reset(new MapScreen_T4(tft,amoled));
 
-  mapScreen->setDrawAllFeatures(true);
+  mapScreenT4->setDrawAllFeatures(true);
 
   multi_heap_info_t info;
   heap_caps_get_info(&info, MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT); // internal RAM, memory capable to store data or to create new task
@@ -90,7 +90,7 @@ void setup()
   // Serial.println("Managed to allocate 2 x 8-bit 320x240 = 76800 bytes");
   // Serial.printf("free bytes: %i  largest free block: %i\n",  info.total_free_bytes, info.largest_free_block);
   
-  mapScreen->setUseDiverHeading(true);
+  mapScreenT4->setUseDiverHeading(true);
 
   pos.la = 51.4601028571429;    // spitfire car
   pos.lo = -0.54883835;
@@ -103,68 +103,68 @@ void setup()
 
 void loop()
 { 
-  mapScreen->setTargetWaypointByLabel("Sub"); // Cafe Jetty
+  mapScreenT4->setTargetWaypointByLabel("Sub"); // Cafe Jetty
 
   if (trackIndex == 0)
   {
-    mapScreen->setAllLakeShown(false);
-    mapScreen->setTargetWaypointByLabel("Sub"); // Cafe Jetty
+    mapScreenT4->setAllLakeShown(false);
+    mapScreenT4->setTargetWaypointByLabel("Sub"); // Cafe Jetty
   }
   else if (trackIndex == 200)
   {
-    mapScreen->setDrawAllFeatures(true);
+    mapScreenT4->setDrawAllFeatures(true);
   }
   else if (trackIndex == 400)
   {
-    mapScreen->setTargetWaypointByLabel("Canoe"); // Mid Jetty    
+    mapScreenT4->setTargetWaypointByLabel("Canoe"); // Mid Jetty    
   }
   else if (trackIndex == 500)
   {
-    mapScreen->setAllLakeShown(true);
+    mapScreenT4->setAllLakeShown(true);
   }
   else if (trackIndex == 600)
   {
-     mapScreen->setZoom(1);
+     mapScreenT4->setZoom(1);
   }
   else if (trackIndex == 700)
   {
-     mapScreen->setZoom(2);
+     mapScreenT4->setZoom(2);
   }
   else if (trackIndex == 800)
   {
-     mapScreen->setZoom(3);
+     mapScreenT4->setZoom(3);
   }
   else if (trackIndex == 900)
   {
-     mapScreen->setZoom(4);
+     mapScreenT4->setZoom(4);
   }
   else if (trackIndex == 1000)
   {
-     mapScreen->setZoom(3);
+     mapScreenT4->setZoom(3);
   }
   else if (trackIndex == 1100)
   {
-     mapScreen->setZoom(2);
+     mapScreenT4->setZoom(2);
   }
   else if (trackIndex == 1100)
   {
-     mapScreen->setZoom(1);
-     mapScreen->setDrawAllFeatures(false);
+     mapScreenT4->setZoom(1);
+     mapScreenT4->setDrawAllFeatures(false);
   }
 
   bool useTrack = true;
   
   if (useTrack)
   {
-    mapScreen->drawDiverOnBestFeaturesMapAtCurrentZoom(diveTrack[trackIndex]._la,diveTrack[trackIndex]._lo,diveTrack[trackIndex]._h);
+    mapScreenT4->drawDiverOnBestFeaturesMapAtCurrentZoom(diveTrack[trackIndex]._la,diveTrack[trackIndex]._lo,diveTrack[trackIndex]._h);
   }
   else
   {
-    mapScreen->setTargetWaypointByLabel("Sub"); // Cafe Jetty
+    mapScreenT4->setTargetWaypointByLabel("Sub"); // Cafe Jetty
 
-    mapScreen->drawDiverOnBestFeaturesMapAtCurrentZoom(pos.la,pos.lo,pos.heading);
+    mapScreenT4->drawDiverOnBestFeaturesMapAtCurrentZoom(pos.la,pos.lo,pos.heading);
 
-    mapScreen->setTargetWaypointByLabel("Sub"); // Cafe Jetty
+    mapScreenT4->setTargetWaypointByLabel("Sub"); // Cafe Jetty
 
     const uint16_t headingStep = 5;
 
@@ -212,21 +212,21 @@ void amoledTestRotatePhotos()
   delay(3000);
   amoledPushImage(visualCheck_410x304,410,304);
   delay(3000);
-  mapScreen->drawFeaturesOnSpecifiedMapToScreen(0);
+  mapScreenT4->drawFeaturesOnSpecifiedMapToScreen(0);
   delay(3000);
-  mapScreen->drawFeaturesOnSpecifiedMapToScreen(1);
+  mapScreenT4->drawFeaturesOnSpecifiedMapToScreen(1);
   delay(3000);
-  mapScreen->drawFeaturesOnSpecifiedMapToScreen(2);
+  mapScreenT4->drawFeaturesOnSpecifiedMapToScreen(2);
   delay(3000);
-  mapScreen->drawFeaturesOnSpecifiedMapToScreen(3);
+  mapScreenT4->drawFeaturesOnSpecifiedMapToScreen(3);
   delay(3000);
-  mapScreen->drawFeaturesOnSpecifiedMapToScreen(4);
+  mapScreenT4->drawFeaturesOnSpecifiedMapToScreen(4);
   delay(3000);
-  mapScreen->drawFeaturesOnSpecifiedMapToScreen(5);
+  mapScreenT4->drawFeaturesOnSpecifiedMapToScreen(5);
   delay(3000);
-  mapScreen->drawFeaturesOnSpecifiedMapToScreen(6);
+  mapScreenT4->drawFeaturesOnSpecifiedMapToScreen(6);
   delay(3000);
-  mapScreen->drawFeaturesOnSpecifiedMapToScreen(7);
+  mapScreenT4->drawFeaturesOnSpecifiedMapToScreen(7);
   delay(3000);
   goto repeat;
 }

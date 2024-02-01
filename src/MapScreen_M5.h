@@ -3,6 +3,8 @@
 
 #include <MapScreen_ex.h>
 
+#include "navigation_waypoints.h"
+
 class M5StickCPlus;
 
 class MapScreen_M5 : public MapScreen_ex
