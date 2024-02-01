@@ -10,9 +10,9 @@
 #include <LV_Helper.h>
 //#include <lvgl.h>
 
-//#include "Final_Frontier_28.h"
 //#include "Fonts/GFXFF/FreeSansBold24pt7b.h"
 #include "Fonts/GFXFF/FreeSansBoldOblique24pt7b.h"
+//#include "Final_Frontier_28.h"
 #include "NotoSansBold36.h"
 #include "NotoSansMonoSCB20.h"
 //#include "Fonts/Custom/Yellowtail_32.h"

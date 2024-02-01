@@ -115,6 +115,10 @@ class MapScreen_ex
     
     void drawDiverOnCompositedMapSprite(const double latitude, const double longitude, const double heading, const geo_map* featureMap);
 
+    void writeOverlayTextToCompositeMapSprite();
+
+    TFT_eSprite* getCompositeSprite();
+
     double distanceBetween(double lat1, double long1, double lat2, double long2) const;
     double degreesCourseTo(double lat1, double long1, double lat2, double long2) const;
     double radiansCourseTo(double lat1, double long1, double lat2, double long2) const;

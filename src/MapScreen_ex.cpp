@@ -6,6 +6,10 @@
 
 #include "navigation_waypoints.h"
 
+#include "fonts/Final_Frontier_28.h"
+#include "fonts/NotoSansBold36.h"
+#include "fonts/NotoSansMonoSCB20.h"
+
 static const uint8_t exitWaypointCount = 4;
 static const navigationWaypoint* exitWaypoints[exitWaypointCount];
 
@@ -59,6 +63,7 @@ void MapScreen_ex::initSprites()
 
   _compositedScreenSprite->setColorDepth(16);
   _compositedScreenSprite->createSprite(getTFTWidth(),getTFTHeight());
+  _compositedScreenSprite->loadFont(NotoSansBold36);     // use smooth font    -D SMOOTH_FONT=1
 
    uint16_t s_headingIndicatorColour=TFT_RED;
    uint16_t s_headingIndicatorRadius=8;
@@ -331,6 +336,8 @@ void MapScreen_ex::drawDiverOnBestFeaturesMapAtCurrentZoom(const double diverLat
       
   drawDiverOnCompositedMapSprite(diverLatitude, diverLongitude, diverHeading, nextMap);
 
+  writeOverlayTextToCompositeMapSprite();
+
   copyFullScreenSpriteToDisplay(_compositedScreenSprite.get());
 
   writeBackTextToScreen(nextMap);
@@ -532,6 +539,22 @@ void MapScreen_ex::drawDiverOnCompositedMapSprite(const double latitude, const d
       _diverPlainSprite->pushToSprite(_compositedScreenSprite.get(),pDiver.x-s_diverSpriteRadius,pDiver.y-s_diverSpriteRadius,TFT_BLACK); // BLACK is the transparent colour
     }
 }
+
+TFT_eSprite* MapScreen_ex::getCompositeSprite()
+{
+  return _compositedScreenSprite.get();
+}
+
+void MapScreen_ex::writeOverlayTextToCompositeMapSprite()
+{
+  TFT_eSprite* canvas = _compositedScreenSprite.get();
+
+  canvas->setTextColor(TFT_WHITE);
+  canvas->setTextWrap(true);
+  canvas->setCursor(0,0);
+  canvas->println("TEST STRING hello junio asdjsajd iereu weq weiwei");
+}
+
 /*
 void MapScreen_ex::drawFeaturesOnCleanMapSprite(const geo_map* featureMap)
 {
