@@ -1,6 +1,4 @@
 #include <Arduino.h>
-#include <SPI.h>
-#include <Wire.h>
 
 // Change definition in include_photos.h to include photos in the build
 // Call amoledTestRotatePhotos() at end of setup() to cycle the photos.
