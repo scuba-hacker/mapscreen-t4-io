@@ -7,24 +7,7 @@
 
 class TFT_eSPI;
 class TFT_eSprite;
-class navigationWaypoint;
-
-class geo_map
-{
-  public:
-    const uint16_t* mapData;
-    const char* label;
-    const uint16_t backColour;
-    const char* backText;
-    const bool surveyMap;
-    const bool swapBytes;
-    const float mapLongitudeLeft;
-    const float mapLongitudeRight;
-    const float mapLatitudeBottom;
-  
-    geo_map(const uint16_t * md, const char* l, uint16_t bc,const char* bt, bool sm, bool sb, float ll, float lr, float lb) : mapData(md),label(l),backColour(bc),backText(bt),surveyMap(sm),swapBytes(sb),mapLongitudeLeft(ll),mapLongitudeRight(lr),mapLatitudeBottom(lb)
-    {}
-};
+class NavigationWaypoint;
 
 /* Requirements:
  *  
@@ -45,8 +28,6 @@ class geo_map
  
 class MapScreen_ex
 {  
-  private:
-
    public:
     class pixel
     {
@@ -59,8 +40,63 @@ class MapScreen_ex
         int16_t y;
         uint16_t colour;
     };
-    
-    protected:        
+
+    class MapScreenAttr
+    {
+      public:
+        int diverSpriteColour;
+        uint8_t diverSpriteRadius;
+
+        uint16_t headingIndicatorColour;
+        uint16_t headingIndicatorRadius;
+        uint16_t headingIndicatorOffsetX;
+        uint16_t headingIndicatorOffsetY;
+
+        uint16_t diverHeadingColour;
+
+        int featureSpriteColour;
+        uint8_t featureSpriteRadius;
+
+        uint16_t targetSpriteColour;
+        uint16_t lastTargetSpriteColour;
+
+        int directionLineColour;
+        int directionLinePixelLength;
+
+        int targetLineColour;
+        int targetLinePixelLength;
+
+        bool useSpriteForFeatures;
+    };
+
+    class geo_map
+    {
+      public:
+        const uint16_t* mapData;
+        const char* label;
+        const uint16_t backColour;
+        const char* backText;
+        const bool surveyMap;
+        const bool swapBytes;
+        const float mapLongitudeLeft;
+        const float mapLongitudeRight;
+        const float mapLatitudeBottom;
+      
+        geo_map(const uint16_t * md, const char* l, uint16_t bc,const char* bt, bool sm, bool sb, float ll, float lr, float lb) : mapData(md),label(l),backColour(bc),backText(bt),surveyMap(sm),swapBytes(sb),mapLongitudeLeft(ll),mapLongitudeRight(lr),mapLatitudeBottom(lb)
+        {}
+    };
+
+    class geoRef
+    {
+      static const int geoMapsSize=10;  // should be same number as number of maps? - set to arbitrarily larger size.
+      public:
+        int geoMaps[geoMapsSize];       // MBJ REFACTOR to std::array
+    };
+
+    protected:
+        const MapScreenAttr _mapAttr;
+        int _exitWaypointCount;
+      
         virtual pixel getRegistrationMarkLocation(int index) = 0;
         virtual int getRegistrationMarkLocationsSize() = 0;
 
@@ -77,13 +113,13 @@ class MapScreen_ex
         virtual const geo_map* getNextMapByPixelLocation(MapScreen_ex::pixel loc, const geo_map* thisMap) = 0;
 
   public:
-    MapScreen_ex(TFT_eSPI& tft);
+    MapScreen_ex(TFT_eSPI& tft,const MapScreenAttr mapAttributes);
     
     ~MapScreen_ex()
     {
     }
     
-    void initMapScreen();
+    virtual void initMapScreen();
     
     virtual int16_t getTFTWidth() const = 0;
     virtual int16_t getTFTHeight() const = 0;
@@ -108,12 +144,12 @@ class MapScreen_ex
 
     void writeOverlayTextToCompositeMapSprite();
 
-    std::shared_ptr<TFT_eSprite> getCompositeSprite();
+    TFT_eSprite& getCompositeSprite();
+    TFT_eSprite& getCleanMapSprite();
 
     double distanceBetween(double lat1, double long1, double lat2, double long2) const;
     double degreesCourseTo(double lat1, double long1, double lat2, double long2) const;
     double radiansCourseTo(double lat1, double long1, double lat2, double long2) const;
-
 
     const int getClosestJettyIndex(double& distance);
 
@@ -173,26 +209,6 @@ class MapScreen_ex
     std::unique_ptr<TFT_eSprite> _targetSprite;
     std::unique_ptr<TFT_eSprite> _lastTargetSprite;
 
-    static const uint8_t s_diverSpriteRadius;
-    static const uint8_t s_featureSpriteRadius;
-    static const uint16_t s_diverSpriteColour;
-    static const uint16_t s_diverHeadingColour;
-    static const uint16_t s_headingIndicatorColour;
-    static const uint16_t s_headingIndicatorRadius;
-    static const uint16_t s_headingIndicatorOffsetX;
-    static const uint16_t s_headingIndicatorOffsetY;
-
-    static const uint16_t s_featureSpriteColour;
-    static const uint16_t s_targetSpriteColour;
-    static const uint16_t s_lastTargetSpriteColour;
-    static const bool     s_useSpriteForFeatures = true;
-
-    static const int directionLineColour;
-    static const int directionLinePixelLength;
-
-    static const int targetLineColour;
-    static const int targetLinePixelLength;
-
     double _lastDiverLatitude;
     double _lastDiverLongitude;
     double _lastDiverHeading;
@@ -215,7 +231,10 @@ class MapScreen_ex
     int16_t _tileYToDisplay;
 
     bool _drawAllFeatures;
-    
+
+    static const int s_exitWaypointSize=10; 
+    std::array<int,s_exitWaypointSize> _exitWaypointIndices;
+ 
     void initSprites();
     void initExitWaypoints();
 
@@ -227,7 +246,7 @@ class MapScreen_ex
     virtual bool isPixelInSubZone(const MapScreen_ex::pixel loc, const geo_map& thisMap) const = 0;
 
     void debugPixelMapOutput(const MapScreen_ex::pixel loc, const geo_map* thisMap, const geo_map& nextMap) const;
-    void debugPixelFeatureOutput(const navigationWaypoint& waypoint, MapScreen_ex::pixel loc, const geo_map& thisMap) const;
+    void debugPixelFeatureOutput(const NavigationWaypoint& waypoint, MapScreen_ex::pixel loc, const geo_map& thisMap) const;
     void debugScaledPixelForTile(pixel p, pixel pScaled, int16_t tileX,int16_t tileY) const;
 
 protected:

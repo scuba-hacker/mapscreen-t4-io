@@ -5,33 +5,9 @@
 #include <cstddef>
 #include <memory>
 
-#include "fonts/NotoSansBold36.h"
+#include "NavigationWaypoints.h"
 
-#include "navigation_waypoints.h"
-
-const uint16_t MapScreen_ex::s_diverSpriteColour = TFT_BLUE;
-const uint8_t  MapScreen_ex::s_diverSpriteRadius = 15;
-
-const uint16_t MapScreen_ex::s_headingIndicatorColour=TFT_RED;
-const uint16_t MapScreen_ex::s_headingIndicatorRadius=8;
-const uint16_t MapScreen_ex::s_headingIndicatorOffsetX=s_diverSpriteRadius;
-const uint16_t MapScreen_ex::s_headingIndicatorOffsetY=0;
-
-const uint16_t MapScreen_ex::s_diverHeadingColour = TFT_BLUE;
-
-const uint16_t MapScreen_ex::s_featureSpriteColour = TFT_MAGENTA;
-const uint8_t  MapScreen_ex::s_featureSpriteRadius = 5;
-
-const uint16_t MapScreen_ex::s_targetSpriteColour = TFT_RED;
-const uint16_t MapScreen_ex::s_lastTargetSpriteColour = TFT_BLUE;
-
-const int MapScreen_ex::directionLineColour = TFT_DARKGREEN;
-const int MapScreen_ex::directionLinePixelLength = 70;
-
-const int MapScreen_ex::targetLineColour = TFT_RED;
-const int MapScreen_ex::targetLinePixelLength = 100;
-
-MapScreen_ex::MapScreen_ex(TFT_eSPI& tft) : 
+MapScreen_ex::MapScreen_ex(TFT_eSPI& tft, const MapScreenAttr mapAttributes) : 
                                                         _zoom(1),
                                                         _priorToZoneZoom(1),
                                                         _tileXToDisplay(0),
@@ -44,7 +20,9 @@ MapScreen_ex::MapScreen_ex(TFT_eSPI& tft) :
                                                         _targetWaypointIndex(-1),
                                                         _prevWaypointIndex(-1),
                                                         _drawAllFeatures(true),
-                                                        _tft(tft)
+                                                        _tft(tft),
+                                                        _mapAttr(mapAttributes),
+                                                        _exitWaypointCount(-1)
 {
   _currentMap = nullptr;
 
@@ -70,56 +48,54 @@ void MapScreen_ex::initSprites()
 {
   _cleanMapAndFeaturesSprite->setColorDepth(16);
   _cleanMapAndFeaturesSprite->createSprite(getTFTWidth(),getTFTHeight());
-  _cleanMapAndFeaturesSprite->loadFont(NotoSansBold36);
 
   _compositedScreenSprite->setColorDepth(16);
   _compositedScreenSprite->createSprite(getTFTWidth(),getTFTHeight());
-  _compositedScreenSprite->loadFont(NotoSansBold36);
 
   _diverSprite->setColorDepth(16);
-  _diverSprite->createSprite(s_diverSpriteRadius*2,s_diverSpriteRadius*2);
-  _diverSprite->fillCircle(s_diverSpriteRadius,s_diverSpriteRadius,s_diverSpriteRadius,s_diverSpriteColour);
+  _diverSprite->createSprite(_mapAttr.diverSpriteRadius*2,_mapAttr.diverSpriteRadius*2);
+  _diverSprite->fillCircle(_mapAttr.diverSpriteRadius,_mapAttr.diverSpriteRadius,_mapAttr.diverSpriteRadius,_mapAttr.diverSpriteColour);
   
   _diverPlainSprite->setColorDepth(16);
-  _diverPlainSprite->createSprite(s_diverSpriteRadius*2,s_diverSpriteRadius*2);
+  _diverPlainSprite->createSprite(_mapAttr.diverSpriteRadius*2,_mapAttr.diverSpriteRadius*2);
   _diverSprite->pushToSprite(*_diverPlainSprite,0,0);
 
-  _diverSprite->fillCircle(s_headingIndicatorOffsetX,s_headingIndicatorOffsetY,s_headingIndicatorRadius,s_headingIndicatorColour);
+  _diverSprite->fillCircle(_mapAttr.headingIndicatorOffsetX,_mapAttr.headingIndicatorOffsetY,_mapAttr.headingIndicatorRadius,_mapAttr.headingIndicatorColour);
 
   _diverRotatedSprite->setColorDepth(16);
-  _diverRotatedSprite->createSprite(s_diverSpriteRadius*2,s_diverSpriteRadius*2);  
+  _diverRotatedSprite->createSprite(_mapAttr.diverSpriteRadius*2,_mapAttr.diverSpriteRadius*2);  
   
   _featureSprite->setColorDepth(16);
-  _featureSprite->createSprite(s_featureSpriteRadius*2+1,s_featureSpriteRadius*2+1);
-  _featureSprite->fillCircle(s_featureSpriteRadius,s_featureSpriteRadius,s_featureSpriteRadius,s_featureSpriteColour);
+  _featureSprite->createSprite(_mapAttr.featureSpriteRadius*2+1,_mapAttr.featureSpriteRadius*2+1);
+  _featureSprite->fillCircle(_mapAttr.featureSpriteRadius,_mapAttr.featureSpriteRadius,_mapAttr.featureSpriteRadius,_mapAttr.featureSpriteColour);
 
   _targetSprite->setColorDepth(16);
-  _targetSprite->createSprite(s_featureSpriteRadius*2+1,s_featureSpriteRadius*2+1);
-  _targetSprite->fillCircle(s_featureSpriteRadius,s_featureSpriteRadius,s_featureSpriteRadius,s_targetSpriteColour);
+  _targetSprite->createSprite(_mapAttr.featureSpriteRadius*2+1,_mapAttr.featureSpriteRadius*2+1);
+  _targetSprite->fillCircle(_mapAttr.featureSpriteRadius,_mapAttr.featureSpriteRadius,_mapAttr.featureSpriteRadius,_mapAttr.targetSpriteColour);
 
   _lastTargetSprite->setColorDepth(16);
-  _lastTargetSprite->createSprite(s_featureSpriteRadius*2+1,s_featureSpriteRadius*2+1);
-  _lastTargetSprite->fillCircle(s_featureSpriteRadius,s_featureSpriteRadius,s_featureSpriteRadius,s_lastTargetSpriteColour);
+  _lastTargetSprite->createSprite(_mapAttr.featureSpriteRadius*2+1,_mapAttr.featureSpriteRadius*2+1);
+  _lastTargetSprite->fillCircle(_mapAttr.featureSpriteRadius,_mapAttr.featureSpriteRadius,_mapAttr.featureSpriteRadius,_mapAttr.lastTargetSpriteColour);
 }
 
 void MapScreen_ex::initExitWaypoints()
 {
-  int currentExitIndex=0;
+  int currentExitIndex=-1;
   
-  for (int i=0; i<getWaypointsCount(); i++)   // MBJ REFACTOR - needs range and enumerate from C++20 as index used.
+  for (int i=0; i<WraysburyWaypoints::getWaypointsCount(); i++)   // MBJ REFACTOR - needs range and enumerate from C++20 as index used.
   {
-    if (strncmp(waypoints[i]._label, "Z0", 2) == 0)
+    if (strncmp(WraysburyWaypoints::waypoints[i]._label, "Z0", 2) == 0)
     {
-      exitWaypointIndices[currentExitIndex++] = i;          // index i used here
-      if (currentExitIndex == exitWaypointIndicesSize - 1)
+      _exitWaypointIndices[++currentExitIndex] = i;          // index i used here
+      if (currentExitIndex == s_exitWaypointSize - 1)
       {
-        exitWaypointIndices[currentExitIndex] = -1;
+        _exitWaypointIndices[currentExitIndex] = -1;
         break;
       }
     }
   }
 
-  exitWaypointCount = currentExitIndex;
+  _exitWaypointCount = currentExitIndex+1;
 }
 
 void MapScreen_ex::initCurrentMap(const double diverLatitude, const double diverLongitude)
@@ -154,10 +130,10 @@ void MapScreen_ex::setTargetWaypointByLabel(const char* label)
   _prevWaypointIndex = _targetWaypointIndex;
   _targetWaypointIndex = -1;
   const int numberCharsToCompare = 3;
-  // find targetWayPoint in the navigation_waypoints array by first 3 chars
-  for (int i=0; i < getWaypointsCount(); i++)        // MBJ REFACTOR - needs range and enumerate from C++20 as index used.
+  // find targetWayPoint in the NavigationWaypoints array by first 3 chars
+  for (int i=0; i < WraysburyWaypoints::getWaypointsCount(); i++)        // MBJ REFACTOR - needs range and enumerate from C++20 as index used.
   {
-    if (strncmp(waypoints[i]._label, label, numberCharsToCompare) == 0)
+    if (strncmp(WraysburyWaypoints::waypoints[i]._label, label, numberCharsToCompare) == 0)
     {
       _targetWaypointIndex=i;            // index i used here
       break;
@@ -240,9 +216,9 @@ const int MapScreen_ex::getClosestJettyIndex(double& shortestDistance)
   shortestDistance = 1e10;
   int closestExitWaypointIndex = 255;
 
-  for (int i=0; i<exitWaypointCount; i++)       // MBJ REFACTOR - needs range and enumerate from C++20 as index used.
+  for (int i=0; i<_exitWaypointCount; i++)       // MBJ REFACTOR - needs range and enumerate from C++20 as index used.
   {
-    double distance = distanceBetween(_lastDiverLatitude, _lastDiverLongitude, waypoints[exitWaypointIndices[i]]._lat, waypoints[exitWaypointIndices[i]]._long);
+    double distance = distanceBetween(_lastDiverLatitude, _lastDiverLongitude, WraysburyWaypoints::waypoints[_exitWaypointIndices[i]]._lat, WraysburyWaypoints::waypoints[_exitWaypointIndices[i]]._long);
   
     if (distance < shortestDistance)
     {
@@ -250,8 +226,8 @@ const int MapScreen_ex::getClosestJettyIndex(double& shortestDistance)
       closestExitWaypointIndex = i;   // index i used here
     }
   }
-    
-  return exitWaypointIndices[closestExitWaypointIndex];
+      
+  return _exitWaypointIndices[closestExitWaypointIndex];
 }
 
 void MapScreen_ex::drawDiverOnBestFeaturesMapAtCurrentZoom(const double diverLatitude, const double diverLongitude, const double diverHeading)
@@ -306,9 +282,9 @@ void MapScreen_ex::drawDiverOnBestFeaturesMapAtCurrentZoom(const double diverLat
 
   double distanceToClosestJetty = 0.0;
   double bearing = 0.0;
-  bearing = drawDirectionLineOnCompositeSprite(diverLatitude, diverLongitude, *nextMap,getClosestJettyIndex(distanceToClosestJetty), directionLineColour, directionLinePixelLength);
+  bearing = drawDirectionLineOnCompositeSprite(diverLatitude, diverLongitude, *nextMap,getClosestJettyIndex(distanceToClosestJetty), _mapAttr.directionLineColour, _mapAttr.directionLinePixelLength);
 
-  bearing = drawDirectionLineOnCompositeSprite(diverLatitude, diverLongitude, *nextMap,_targetWaypointIndex, targetLineColour, targetLinePixelLength);
+  bearing = drawDirectionLineOnCompositeSprite(diverLatitude, diverLongitude, *nextMap,_targetWaypointIndex, _mapAttr.targetLineColour, _mapAttr.targetLinePixelLength);
   
   drawHeadingLineOnCompositeMapSprite(diverLatitude, diverLongitude, diverHeading, *nextMap);
       
@@ -406,7 +382,7 @@ int MapScreen_ex::drawDirectionLineOnCompositeSprite(const double diverLatitude,
 {
   int heading = 0;
 
-  const navigationWaypoint& w = waypoints[waypointIndex];
+  const NavigationWaypoint& w = WraysburyWaypoints::waypoints[waypointIndex];
 
   pixel pDiver = convertGeoToPixelDouble(diverLatitude, diverLongitude, featureMap);
   int16_t diverTileX=0,diverTileY=0;
@@ -469,12 +445,12 @@ void MapScreen_ex::drawHeadingLineOnCompositeMapSprite(const double diverLatitud
   pHeading.x = pDiver.x + hY_t3potoneuse * sin(rads);
   pHeading.y = pDiver.y - hY_t3potoneuse * cos(rads);
 
-  _compositedScreenSprite->drawLine(pDiver.x, pDiver.y, pHeading.x,pHeading.y,s_diverHeadingColour);
+  _compositedScreenSprite->drawLine(pDiver.x, pDiver.y, pHeading.x,pHeading.y,_mapAttr.diverHeadingColour);
 
-  _compositedScreenSprite->drawLine(pDiver.x-2, pDiver.y-2, pHeading.x,pHeading.y,s_diverHeadingColour);
-  _compositedScreenSprite->drawLine(pDiver.x-2, pDiver.y+2, pHeading.x,pHeading.y,s_diverHeadingColour);
-  _compositedScreenSprite->drawLine(pDiver.x+2, pDiver.y-2, pHeading.x,pHeading.y,s_diverHeadingColour);
-  _compositedScreenSprite->drawLine(pDiver.x+2, pDiver.y+2, pHeading.x,pHeading.y,s_diverHeadingColour);
+  _compositedScreenSprite->drawLine(pDiver.x-2, pDiver.y-2, pHeading.x,pHeading.y,_mapAttr.diverHeadingColour);
+  _compositedScreenSprite->drawLine(pDiver.x-2, pDiver.y+2, pHeading.x,pHeading.y,_mapAttr.diverHeadingColour);
+  _compositedScreenSprite->drawLine(pDiver.x+2, pDiver.y-2, pHeading.x,pHeading.y,_mapAttr.diverHeadingColour);
+  _compositedScreenSprite->drawLine(pDiver.x+2, pDiver.y+2, pHeading.x,pHeading.y,_mapAttr.diverHeadingColour);
 }
 
 void MapScreen_ex::drawDiverOnCompositedMapSprite(const double latitude, const double longitude, const double heading, const geo_map& featureMap)
@@ -486,21 +462,21 @@ void MapScreen_ex::drawDiverOnCompositedMapSprite(const double latitude, const d
 
     if (_prevWaypointIndex != -1)
     {
-      pixel p = convertGeoToPixelDouble(waypoints[_prevWaypointIndex]._lat, waypoints[_prevWaypointIndex]._long, featureMap);
+      pixel p = convertGeoToPixelDouble(WraysburyWaypoints::waypoints[_prevWaypointIndex]._lat, WraysburyWaypoints::waypoints[_prevWaypointIndex]._long, featureMap);
       int16_t tileX=0,tileY=0;
       p = scalePixelForZoomedInTile(p,tileX,tileY);
       if (tileX == diverTileX && tileY == diverTileY)  // only show last target sprite on screen if tiles match
-        _lastTargetSprite->pushToSprite(*_compositedScreenSprite, p.x-s_featureSpriteRadius,p.y-s_featureSpriteRadius,TFT_BLACK);
+        _lastTargetSprite->pushToSprite(*_compositedScreenSprite, p.x-_mapAttr.featureSpriteRadius,p.y-_mapAttr.featureSpriteRadius,TFT_BLACK);
     }
 
     if (_targetWaypointIndex != -1)
     {
-      pixel p = convertGeoToPixelDouble(waypoints[_targetWaypointIndex]._lat, waypoints[_targetWaypointIndex]._long, featureMap);
+      pixel p = convertGeoToPixelDouble(WraysburyWaypoints::waypoints[_targetWaypointIndex]._lat, WraysburyWaypoints::waypoints[_targetWaypointIndex]._long, featureMap);
       int16_t tileX=0,tileY=0;
       p = scalePixelForZoomedInTile(p,tileX,tileY);
   
       if (tileX == diverTileX && tileY == diverTileY)  // only show target sprite on screen if tiles match
-        _targetSprite->pushToSprite(*_compositedScreenSprite, p.x-s_featureSpriteRadius,p.y-s_featureSpriteRadius,TFT_BLACK);
+        _targetSprite->pushToSprite(*_compositedScreenSprite, p.x-_mapAttr.featureSpriteRadius,p.y-_mapAttr.featureSpriteRadius,TFT_BLACK);
     }
 
     // draw direction line to next target.
@@ -508,17 +484,22 @@ void MapScreen_ex::drawDiverOnCompositedMapSprite(const double latitude, const d
     {
       _diverRotatedSprite->fillSprite(TFT_BLACK);
       _diverSprite->pushRotated(*_diverRotatedSprite,heading,TFT_BLACK); // BLACK is the transparent colour
-      _diverRotatedSprite->pushToSprite(*_compositedScreenSprite,pDiver.x-s_diverSpriteRadius,pDiver.y-s_diverSpriteRadius,TFT_BLACK); // BLACK is the transparent colour
+      _diverRotatedSprite->pushToSprite(*_compositedScreenSprite,pDiver.x-_mapAttr.diverSpriteRadius,pDiver.y-_mapAttr.diverSpriteRadius,TFT_BLACK); // BLACK is the transparent colour
     }
     else
     {
-      _diverPlainSprite->pushToSprite(*_compositedScreenSprite,pDiver.x-s_diverSpriteRadius,pDiver.y-s_diverSpriteRadius,TFT_BLACK); // BLACK is the transparent colour
+      _diverPlainSprite->pushToSprite(*_compositedScreenSprite,pDiver.x-_mapAttr.diverSpriteRadius,pDiver.y-_mapAttr.diverSpriteRadius,TFT_BLACK); // BLACK is the transparent colour
     }
 }
 
-std::shared_ptr<TFT_eSprite> MapScreen_ex::getCompositeSprite()
+TFT_eSprite& MapScreen_ex::getCompositeSprite()
 {
-  return _compositedScreenSprite;
+  return *_compositedScreenSprite;
+}
+
+TFT_eSprite& MapScreen_ex::getCleanMapSprite()
+{
+  return *_cleanMapAndFeaturesSprite;
 }
 
 void MapScreen_ex::writeOverlayTextToCompositeMapSprite()
@@ -543,21 +524,21 @@ void MapScreen_ex::drawRegistrationPixelsOnCleanMapSprite(const geo_map& feature
   //    Serial.printf("%i,%i      s: %i,%i\n",p.x,p.y,sP.x,sP.y);
     if (p.x >= 0 && p.x < getTFTWidth() && p.y >=0 && p.y < getTFTHeight())   // CHANGE these to take account of tile shown  
     {
-      if (s_useSpriteForFeatures)
-        _featureSprite->pushToSprite(*_cleanMapAndFeaturesSprite,p.x - s_featureSpriteRadius, p.y - s_featureSpriteRadius,TFT_BLACK);
+      if (_mapAttr.useSpriteForFeatures)
+        _featureSprite->pushToSprite(*_cleanMapAndFeaturesSprite,p.x - _mapAttr.featureSpriteRadius, p.y - _mapAttr.featureSpriteRadius,TFT_BLACK);
       else
-        _cleanMapAndFeaturesSprite->fillCircle(p.x,p.y,s_featureSpriteRadius,p.colour);
+        _cleanMapAndFeaturesSprite->fillCircle(p.x,p.y,_mapAttr.featureSpriteRadius,p.colour);
         
-  //      debugPixelFeatureOutput(waypoints[i], p, featureMap);
+  //      debugPixelFeatureOutput(WraysburyWaypoints::waypoints[i], p, featureMap);
     }
   }
 }
 
 void MapScreen_ex::drawFeaturesOnCleanMapSprite(const geo_map& featureMap)
 {
-  for(int i=0;i<getWaypointsCount();i++)
+  for(int i=0;i<WraysburyWaypoints::getWaypointsCount();i++)
   {
-    pixel p = convertGeoToPixelDouble(waypoints[i]._lat, waypoints[i]._long, featureMap);
+    pixel p = convertGeoToPixelDouble(WraysburyWaypoints::waypoints[i]._lat, WraysburyWaypoints::waypoints[i]._long, featureMap);
 
     int16_t tileX=0,tileY=0;
     p = scalePixelForZoomedInTile(p,tileX,tileY);
@@ -565,12 +546,12 @@ void MapScreen_ex::drawFeaturesOnCleanMapSprite(const geo_map& featureMap)
 //    Serial.printf("%i,%i      s: %i,%i\n",p.x,p.y,sP.x,sP.y);
     if (tileX == _tileXToDisplay && tileY == _tileYToDisplay && p.x >= 0 && p.x < getTFTWidth() && p.y >=0 && p.y < getTFTHeight())   // CHANGE these to take account of tile shown  
     {
-      if (s_useSpriteForFeatures)
-        _featureSprite->pushToSprite(*_cleanMapAndFeaturesSprite,p.x - s_featureSpriteRadius, p.y - s_featureSpriteRadius,TFT_BLACK);
+      if (_mapAttr.useSpriteForFeatures)
+        _featureSprite->pushToSprite(*_cleanMapAndFeaturesSprite,p.x - _mapAttr.featureSpriteRadius, p.y - _mapAttr.featureSpriteRadius,TFT_BLACK);
       else
-        _cleanMapAndFeaturesSprite->fillCircle(p.x,p.y,s_featureSpriteRadius,s_featureSpriteColour);
+        _cleanMapAndFeaturesSprite->fillCircle(p.x,p.y,_mapAttr.featureSpriteRadius,_mapAttr.featureSpriteColour);
         
-//      debugPixelFeatureOutput(waypoints[i], p, featureMap);
+//      debugPixelFeatureOutput(WraysburyWaypoints::waypoints[i], p, featureMap);
     }
   }
 }
@@ -606,7 +587,7 @@ void MapScreen_ex::debugPixelMapOutput(const MapScreen_ex::pixel loc, const geo_
   Serial.printf("dpmo %s %i, %i --> %s\n",thisMap->label,loc.x,loc.y,nextMap.label);
 }
 
-void MapScreen_ex::debugPixelFeatureOutput(const navigationWaypoint& waypoint, MapScreen_ex::pixel loc, const geo_map& thisMap) const
+void MapScreen_ex::debugPixelFeatureOutput(const NavigationWaypoint& waypoint, MapScreen_ex::pixel loc, const geo_map& thisMap) const
 {
   Serial.printf("dpfo x=%i y=%i %s %s \n",loc.x,loc.y,thisMap.label,waypoint._label);
 }
@@ -650,7 +631,7 @@ void MapScreen_ex::testAnimatingDiverSpriteOnCurrentMap()
     _cleanMapAndFeaturesSprite->pushToSprite(*_compositedScreenSprite,0,0);
     
     pixel p = convertGeoToPixelDouble(latitude, longitude, *featureAreaToShow);
-    _diverSprite->pushToSprite(*_compositedScreenSprite,p.x-s_diverSpriteRadius,p.y-s_diverSpriteRadius,TFT_BLACK); // BLACK is the transparent colour
+    _diverSprite->pushToSprite(*_compositedScreenSprite,p.x-_mapAttr.diverSpriteRadius,p.y-_mapAttr.diverSpriteRadius,TFT_BLACK); // BLACK is the transparent colour
 
     copyFullScreenSpriteToDisplay(*_compositedScreenSprite);
 
@@ -727,7 +708,7 @@ void MapScreen_ex::testDrawingMapsAndFeatures(uint8_t& currentMap, int16_t& zoom
           _cleanMapAndFeaturesSprite->pushToSprite(*_compositedScreenSprite,0,0);
           
           pixel p = convertGeoToPixelDouble(latitude, longitude, featureAreaToShow);
-          _diverSprite->pushToSprite(*_compositedScreenSprite,p.x-s_diverSpriteRadius,p.y-s_diverSpriteRadius,TFT_BLACK); // BLACK is the transparent colour
+          _diverSprite->pushToSprite(*_compositedScreenSprite,p.x-_mapAttr.diverSpriteRadius,p.y-_mapAttr.diverSpriteRadius,TFT_BLACK); // BLACK is the transparent colour
     
 //          _compositedScreenSprite->pushSprite(0,0);
           _amoled->pushColors((uint16_t*)(_compositedScreenSprite->getPointer()),getTFTWidth()*getTFTHeight());
@@ -758,7 +739,7 @@ void MapScreen_ex::testDrawingMapsAndFeatures(uint8_t& currentMap, int16_t& zoom
       _cleanMapAndFeaturesSprite->pushToSprite(*_compositedScreenSprite,0,0);
       
       pixel p = convertGeoToPixelDouble(latitude, longitude, featureAreaToShow);
-      _diverSprite->pushToSprite(*_compositedScreenSprite,p.x-s_diverSpriteRadius,p.y-s_diverSpriteRadius,TFT_BLACK); // BLACK is the transparent colour
+      _diverSprite->pushToSprite(*_compositedScreenSprite,p.x-_mapAttr.diverSpriteRadius,p.y-_mapAttr.diverSpriteRadius,TFT_BLACK); // BLACK is the transparent colour
 
       //_compositedScreenSprite->pushSprite(0,0);
       _amoled->pushColors((uint16_t*)(_compositedScreenSprite->getPointer()),getTFTWidth()*getTFTHeight());

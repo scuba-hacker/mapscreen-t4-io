@@ -3,7 +3,7 @@
 
 #include <MapScreen_ex.h>
 
-#include "navigation_waypoints.h"
+#include "NavigationWaypoints.h"
 
 class LilyGo_AMOLED;
 
@@ -25,30 +25,34 @@ class MapScreen_T4 : public MapScreen_ex
         LilyGo_AMOLED& _amoled;
     
         std::unique_ptr<TFT_eSprite> _scratchPadSprite;
+        
+        virtual void initMapScreen() override;
 
         virtual int getFirstDetailMapIndex() override;
         virtual int getEndDetailMaps() override;
         virtual int getAllMapIndex() override;
-        virtual const geo_map* getMaps() override;
+        virtual const MapScreen_ex::geo_map* getMaps() override;
 
-        virtual const geo_map* getNextMapByPixelLocation(MapScreen_ex::pixel loc, const geo_map* thisMap) override;
+        virtual const MapScreen_ex::geo_map* getNextMapByPixelLocation(MapScreen_ex::pixel loc, const MapScreen_ex::geo_map* thisMap) override;
 
-        static const geo_map s_maps[];
+        static const MapScreen_ex::geo_map s_maps[];
 
-        static constexpr const geo_map* _NMap=s_maps;          static const uint8_t _NMapIndex = 0;
-        static constexpr const geo_map* _WMap=s_maps+1;        static const uint8_t _WMapIndex = 1;
-        static constexpr const geo_map* _SWMap=s_maps+2;       static const uint8_t _SWMapIndex = 2;
-        static constexpr const geo_map* _SMap=s_maps+3;        static const uint8_t _SMapIndex = 3;
-        static constexpr const geo_map* _SEMap=s_maps+4;       static const uint8_t _SEMapIndex = 4;
-        static constexpr const geo_map* _allLakeMap=s_maps+5;  static const uint8_t _allLakeMapIndex = 5;
-        static constexpr const geo_map* _canoeZoneMap=s_maps+6;static const uint8_t _canoeZoneMapIndex = 6;
-        static constexpr const geo_map* _subZoneMap=s_maps+7;  static const uint8_t _subZoneMapIndex = 7;
+        static constexpr const MapScreen_ex::geo_map* _NMap=s_maps;          static const uint8_t _NMapIndex = 0;
+        static constexpr const MapScreen_ex::geo_map* _WMap=s_maps+1;        static const uint8_t _WMapIndex = 1;
+        static constexpr const MapScreen_ex::geo_map* _SWMap=s_maps+2;       static const uint8_t _SWMapIndex = 2;
+        static constexpr const MapScreen_ex::geo_map* _SMap=s_maps+3;        static const uint8_t _SMapIndex = 3;
+        static constexpr const MapScreen_ex::geo_map* _SEMap=s_maps+4;       static const uint8_t _SEMapIndex = 4;
+        static constexpr const MapScreen_ex::geo_map* _allLakeMap=s_maps+5;  static const uint8_t _allLakeMapIndex = 5;
+        static constexpr const MapScreen_ex::geo_map* _canoeZoneMap=s_maps+6;static const uint8_t _canoeZoneMapIndex = 6;
+        static constexpr const MapScreen_ex::geo_map* _subZoneMap=s_maps+7;  static const uint8_t _subZoneMapIndex = 7;
 
         static const std::array<MapScreen_ex::MapScreen_ex::BoundingBox, 1> boundingBoxesCanoe;
         static const std::array<MapScreen_ex::MapScreen_ex::BoundingBox, 2> boundingBoxesSub;
 
         static const int maxFeatures = 255;
-        std::array<geoRef, maxFeatures>    _featureToMaps;
+        std::array<MapScreen_ex::geoRef, maxFeatures>    _featureToMaps;
+
+        static const MapScreenAttr s_mapT4Attr;
 
     public:
         MapScreen_T4(TFT_eSPI& tft, LilyGo_AMOLED& lilygoT3);
@@ -58,17 +62,17 @@ class MapScreen_T4 : public MapScreen_ex
         virtual int getRegistrationMarkLocationsSize() override { return s_registrationPixelsSize; }
 
         void initFeatureToMapsLookup();
-        void initMapsForFeature(const navigationWaypoint& waypoint, geoRef& ref);
+        void initMapsForFeature(const NavigationWaypoint& waypoint, MapScreen_ex::geoRef& ref);
 
         virtual int16_t getTFTWidth() const override {return 600;}
         virtual int16_t getTFTHeight() const override {return 450; }
 
         virtual void fillScreen(int colour) override;
         virtual void copyFullScreenSpriteToDisplay(TFT_eSprite& sprite) override;
-        virtual void writeMapTitleToSprite(TFT_eSprite& sprite, const geo_map& map) override;
+        virtual void writeMapTitleToSprite(TFT_eSprite& sprite, const MapScreen_ex::geo_map& map) override;
 
-        virtual bool isPixelInCanoeZone(const MapScreen_ex::pixel loc, const geo_map& thisMap) const override;
-        virtual bool isPixelInSubZone(const MapScreen_ex::pixel loc, const geo_map& thisMap) const override;
+        virtual bool isPixelInCanoeZone(const MapScreen_ex::pixel loc, const MapScreen_ex::geo_map& thisMap) const override;
+        virtual bool isPixelInSubZone(const MapScreen_ex::pixel loc, const MapScreen_ex::geo_map& thisMap) const override;
 };
 
 #endif

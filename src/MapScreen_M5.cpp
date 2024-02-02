@@ -1,6 +1,10 @@
+#if BUILD_MAPSCREEN_M5==1
+
 #include <MapScreen_M5.h>
 
 #include <M5StickCPlus.h>
+
+#include "fonts/NotoSansMonoSCB20.h"
 
 extern const uint16_t w1_1[];
 extern const uint16_t w1_2[];
@@ -8,7 +12,7 @@ extern const uint16_t w1_3[];
 extern const uint16_t w1_4[];
 extern const uint16_t wraysbury_x1[];
 
-const geo_map MapScreen_M5::s_maps[] =
+const MapScreen_ex::geo_map MapScreen_M5::s_maps[] =
 {
   [0] = { .mapData = w1_1, .label="North", .backColour=TFT_BLACK, .backText="", .surveyMap=false, .swapBytes=false, .mapLongitudeLeft = -0.55, .mapLongitudeRight = -0.548, .mapLatitudeBottom = 51.4604},
   [1] = { .mapData = w1_2, .label="Cafe", .backColour=TFT_BLACK, .backText="", .surveyMap=false, .swapBytes=false, .mapLongitudeLeft = -0.5495, .mapLongitudeRight = -0.5475, .mapLatitudeBottom = 51.4593},
@@ -45,6 +49,31 @@ const std::array<MapScreen_ex::pixel, MapScreen_M5::s_registrationPixelsSize> Ma
 };
 
 
+const MapScreen_ex::MapScreenAttr MapScreen_M5::s_mapM5Attr = 
+{
+  .diverSpriteColour = TFT_BLUE,
+  .diverSpriteRadius = 15,
+
+  .headingIndicatorColour = TFT_RED,
+  .headingIndicatorRadius = 8,
+  .headingIndicatorOffsetX = 15,
+  .headingIndicatorOffsetY = 0,
+
+  .diverHeadingColour = TFT_BLUE,
+
+  .featureSpriteColour = TFT_MAGENTA,
+  .featureSpriteRadius = 5,
+
+  .targetSpriteColour = TFT_RED,
+  .lastTargetSpriteColour = TFT_BLUE,
+
+  .directionLineColour = TFT_DARKGREEN,
+  .directionLinePixelLength = 70,
+
+  .targetLineColour = TFT_RED,
+  .targetLinePixelLength = 100,
+  .useSpriteForFeatures = true
+};
 
 MapScreen_ex::pixel MapScreen_M5::getRegistrationMarkLocation(int index) 
 { 
@@ -54,9 +83,17 @@ MapScreen_ex::pixel MapScreen_M5::getRegistrationMarkLocation(int index)
         return pixel(-1,-1);
 }
 
-MapScreen_M5::MapScreen_M5(TFT_eSPI& tft, M5StickCPlus& m5) : MapScreen_ex(tft), _m5(m5)
+MapScreen_M5::MapScreen_M5(TFT_eSPI& tft, M5StickCPlus& m5) : MapScreen_ex(tft, s_mapM5Attr), _m5(m5)
 {
   initMapScreen();
+}
+
+void MapScreen_M5::initMapScreen()
+{
+  MapScreen_ex::initMapScreen();
+
+  getCompositeSprite().loadFont(NotoSansMonoSCB20);
+  getCleanMapSprite().loadFont(NotoSansMonoSCB20);
 }
 
 void MapScreen_M5::copyFullScreenSpriteToDisplay(TFT_eSprite& sprite)
@@ -69,7 +106,7 @@ void MapScreen_M5::fillScreen(int colour)
   _tft.fillScreen(colour);
 }
 
-void MapScreen_M5::writeMapTitleToSprite(TFT_eSprite& sprite, const geo_map& map)
+void MapScreen_M5::writeMapTitleToSprite(TFT_eSprite& sprite, const MapScreen_ex::geo_map& map)
 {
     if (map.backText)
     {
@@ -80,9 +117,9 @@ void MapScreen_M5::writeMapTitleToSprite(TFT_eSprite& sprite, const geo_map& map
     }
 }
 
-const geo_map* MapScreen_M5::getNextMapByPixelLocation(MapScreen_ex::pixel loc, const geo_map* thisMap)
+const MapScreen_ex::geo_map* MapScreen_M5::getNextMapByPixelLocation(MapScreen_ex::pixel loc, const MapScreen_ex::geo_map* thisMap)
 {
-  const geo_map* nextMap = thisMap;
+  const MapScreen_ex::geo_map* nextMap = thisMap;
 
   if (thisMap == _allLakeMap)
     return _allLakeMap;
@@ -154,7 +191,7 @@ const geo_map* MapScreen_M5::getNextMapByPixelLocation(MapScreen_ex::pixel loc, 
 // BOUNDING BOX FOR CANOE M5: TOP-LEFT (62, 51) BOT-RIGHT (79, 71) 
 
 const std::array<MapScreen_ex::MapScreen_ex::BoundingBox, 1> MapScreen_M5::boundingBoxesCanoe = {{{{62,51},{79,71},{*MapScreen_M5::_northMap}}}};
-bool MapScreen_M5::isPixelInCanoeZone(const MapScreen_ex::pixel loc, const geo_map& thisMap) const
+bool MapScreen_M5::isPixelInCanoeZone(const MapScreen_ex::pixel loc, const MapScreen_ex::geo_map& thisMap) const
 {
   for (auto& box : boundingBoxesCanoe)
   {
@@ -168,7 +205,7 @@ bool MapScreen_M5::isPixelInCanoeZone(const MapScreen_ex::pixel loc, const geo_m
 /*
 const MapScreen_ex::BoundingBox MapScreen_M5::boundingBoxesCanoe[] = {{{62,51},{79,71},{MapScreen_M5::_northMap}}};
 
-bool MapScreen_M5::isPixelInCanoeZone(const MapScreen_ex::pixel loc, const geo_map* thisMap) const
+bool MapScreen_M5::isPixelInCanoeZone(const MapScreen_ex::pixel loc, const MapScreen_ex::geo_map* thisMap) const
 {
   for (auto& box : boundingBoxesCanoe)
   {
@@ -187,7 +224,7 @@ const std::array<MapScreen_ex::MapScreen_ex::BoundingBox, 2> MapScreen_M5::bound
                   {{12,53},{31,72},{*MapScreen_M5::_cafeJettyMap/*_cafeJettyMap*/}}
                   } };
 
-bool MapScreen_M5::isPixelInSubZone(const MapScreen_ex::pixel loc, const geo_map& thisMap) const
+bool MapScreen_M5::isPixelInSubZone(const MapScreen_ex::pixel loc, const MapScreen_ex::geo_map& thisMap) const
 {
   for (auto& box : boundingBoxesSub)
   {
@@ -204,7 +241,7 @@ const MapScreen_ex::BoundingBox MapScreen_M5::boundingBoxesSub[] = {
                   {{12,53},{31,72},{MapScreen_M5::_cafeJettyMap}}
                   };
 
-bool MapScreen_M5::isPixelInSubZone(const MapScreen_ex::pixel loc, const geo_map* thisMap) const
+bool MapScreen_M5::isPixelInSubZone(const MapScreen_ex::pixel loc, const MapScreen_ex::geo_map* thisMap) const
 {
   for (auto& box : boundingBoxesSub)
   {
@@ -215,3 +252,4 @@ bool MapScreen_M5::isPixelInSubZone(const MapScreen_ex::pixel loc, const geo_map
   return false;
 }
 */
+#endif

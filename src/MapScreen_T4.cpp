@@ -1,8 +1,12 @@
+#if BUILD_MAPSCREEN_T4==1
+
 #include <MapScreen_T4.h>
 
 #include <TFT_eSPI.h>
 
 #include "LilyGo_amoled.h"
+
+#include "fonts/NotoSansBold36.h"
 
 extern const uint16_t lily_wraysbury_N[];
 extern const uint16_t lily_wraysbury_W[];
@@ -11,7 +15,7 @@ extern const uint16_t lily_wraysbury_S[];
 extern const uint16_t lily_wraysbury_SE[];
 extern const uint16_t lily_wraysbury_All[];
 
-const geo_map MapScreen_T4::s_maps[] =
+const MapScreen_ex::geo_map MapScreen_T4::s_maps[] =
 {
   [0] = { .mapData = lily_wraysbury_N, .label="North", .backColour=TFT_BLACK, .backText="", .surveyMap=false, .swapBytes=false, .mapLongitudeLeft = -0.5503, .mapLongitudeRight = -0.5473, .mapLatitudeBottom = 51.4613},
   [1] = { .mapData = lily_wraysbury_W, .label="West", .backColour=TFT_BLACK, .backText="", .surveyMap=false, .swapBytes=false, .mapLongitudeLeft = -0.5501, .mapLongitudeRight = -0.5471, .mapLatitudeBottom = 51.4606},
@@ -46,6 +50,32 @@ const std::array<MapScreen_ex::pixel, MapScreen_T4::s_registrationPixelsSize> Ma
 [15]= {  .x=mX_t3-o,  .y=mY_t3-o,  .colour=0x0000}
 }};     // How weird this is an older syntax from C++11 which requires an extra open and close brace.
 
+const MapScreen_ex::MapScreenAttr MapScreen_T4::s_mapT4Attr = 
+{
+  .diverSpriteColour = TFT_BLUE,
+  .diverSpriteRadius = 15,
+
+  .headingIndicatorColour = TFT_RED,
+  .headingIndicatorRadius = 8,
+  .headingIndicatorOffsetX = 15,
+  .headingIndicatorOffsetY = 0,
+
+  .diverHeadingColour = TFT_BLUE,
+
+  .featureSpriteColour = TFT_MAGENTA,
+  .featureSpriteRadius = 5,
+
+  .targetSpriteColour = TFT_RED,
+  .lastTargetSpriteColour = TFT_BLUE,
+
+  .directionLineColour = TFT_DARKGREEN,
+  .directionLinePixelLength = 70,
+
+  .targetLineColour = TFT_RED,
+  .targetLinePixelLength = 100,
+  .useSpriteForFeatures = true
+};
+
 MapScreen_ex::pixel MapScreen_T4::getRegistrationMarkLocation(int index) 
 { 
     if (index < s_registrationPixelsSize)
@@ -56,12 +86,13 @@ MapScreen_ex::pixel MapScreen_T4::getRegistrationMarkLocation(int index)
 
 void MapScreen_T4::initFeatureToMapsLookup()
 {
-  for (int i=0; i<getWaypointsCount(); i++)                    // MBJ REFACTOR  - needs range and enumerate in C++20
+  for (int i=0; i<WraysburyWaypoints::getWaypointsCount(); i++)                    // MBJ REFACTOR  - needs range and enumerate in C++20
   {
-    initMapsForFeature(waypoints[i],_featureToMaps[i]);     // index i used here
+    initMapsForFeature(WraysburyWaypoints::waypoints[i],_featureToMaps[i]);     // index i used here
   }
 }
-void MapScreen_T4::initMapsForFeature(const navigationWaypoint& waypoint, geoRef& ref)
+
+void MapScreen_T4::initMapsForFeature(const NavigationWaypoint& waypoint, geoRef& ref)
 {
   int refIndex = 0;
   
@@ -81,7 +112,7 @@ void MapScreen_T4::initMapsForFeature(const navigationWaypoint& waypoint, geoRef
   }
 }
 
-MapScreen_T4::MapScreen_T4(TFT_eSPI& tft, LilyGo_AMOLED& lilygoT3) : MapScreen_ex(tft),_amoled(lilygoT3)
+MapScreen_T4::MapScreen_T4(TFT_eSPI& tft, LilyGo_AMOLED& lilygoT3) : MapScreen_ex(tft,s_mapT4Attr),_amoled(lilygoT3)
 {
   initMapScreen();
 
@@ -89,6 +120,14 @@ MapScreen_T4::MapScreen_T4(TFT_eSPI& tft, LilyGo_AMOLED& lilygoT3) : MapScreen_e
 
   _scratchPadSprite = std::make_unique<TFT_eSprite>(&tft);  
   _scratchPadSprite->createSprite(getTFTWidth(),getTFTHeight());
+}
+
+void MapScreen_T4::initMapScreen()
+{
+  MapScreen_ex::initMapScreen();
+
+  getCompositeSprite().loadFont(NotoSansBold36);
+  getCleanMapSprite().loadFont(NotoSansBold36);
 }
 
 int MapScreen_T4::getFirstDetailMapIndex()
@@ -106,7 +145,7 @@ int MapScreen_T4::getAllMapIndex()
   return _allLakeMapIndex;
 }
 
-const geo_map* MapScreen_T4::getMaps()
+const MapScreen_ex::geo_map* MapScreen_T4::getMaps()
 {
   return s_maps;
 }
@@ -123,7 +162,7 @@ void MapScreen_T4::fillScreen(int colour)
 }
 
 // This needs customising for the T4 maps. Writes text to the canoe/sub zoomed in zones
-void MapScreen_T4::writeMapTitleToSprite(TFT_eSprite& sprite, const geo_map& map)
+void MapScreen_T4::writeMapTitleToSprite(TFT_eSprite& sprite, const MapScreen_ex::geo_map& map)
 {
     if (map.backText)
     {
@@ -135,9 +174,9 @@ void MapScreen_T4::writeMapTitleToSprite(TFT_eSprite& sprite, const geo_map& map
 }
 
 // This needs customising for the T4 maps. Currently switches when within 30 pixels of screen edge.
-const geo_map* MapScreen_T4::getNextMapByPixelLocation(MapScreen_ex::pixel loc, const geo_map* thisMap)
+const MapScreen_ex::geo_map* MapScreen_T4::getNextMapByPixelLocation(MapScreen_ex::pixel loc, const MapScreen_ex::geo_map* thisMap)
 {
-  const geo_map* nextMap = thisMap;
+  const MapScreen_ex::geo_map* nextMap = thisMap;
 
   if (thisMap == _allLakeMap)
     return _allLakeMap;
@@ -211,7 +250,7 @@ const geo_map* MapScreen_T4::getNextMapByPixelLocation(MapScreen_ex::pixel loc, 
 // This is the M5 canoe bounding box - needs updating for T4
 // BOUNDING BOX FOR CANOE M5: TOP-LEFT (62, 51) BOT-RIGHT (79, 71) 
 const std::array<MapScreen_ex::MapScreen_ex::BoundingBox, 1> MapScreen_T4::boundingBoxesCanoe = {{{{62,51},{79,71},{*MapScreen_T4::_NMap}}}};
-bool MapScreen_T4::isPixelInCanoeZone(const MapScreen_ex::pixel loc, const geo_map& thisMap) const
+bool MapScreen_T4::isPixelInCanoeZone(const MapScreen_ex::pixel loc, const MapScreen_ex::geo_map& thisMap) const
 {
   return false; // temp - remove when new bounding box pixels are coded above
 
@@ -245,3 +284,4 @@ bool MapScreen_T4::isPixelInSubZone(const MapScreen_ex::pixel loc, const geo_map
   return false;
 }
 
+#endif
