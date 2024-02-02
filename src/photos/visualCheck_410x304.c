@@ -3,7 +3,7 @@
 
 #include <include_photos.h>
 
-#ifdef INCLUDE_PHOTOS_IN_BUILD
+#ifndef INCLUDE_PHOTOS_IN_BUILD
 const uint16_t visualCheck_410x304[] = {0x0000};
 
 #else

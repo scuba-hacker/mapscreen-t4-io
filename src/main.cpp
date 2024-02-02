@@ -2,9 +2,12 @@
 #include <SPI.h>
 #include <Wire.h>
 
-#ifdef BUILD_MAPSCREEN_T4       // defined in platform.io env for the T4 display
-  #include "MapScreen_T4.h"
-  #include "LilyGo_amoled.h"
+// Change definition in include_photos.h to include photos in the build
+// Call amoledTestRotatePhotos() at end of setup() to cycle the photos.
+
+#if BUILD_MAPSCREEN_T4 == 1      // defined in platform.io env for the T4 display
+  #include <MapScreen_T4.h>
+  #include <LilyGo_AMOLED.h>
   #include <TFT_eSPI.h>
 
   TFT_eSPI tft = TFT_eSPI();
@@ -35,17 +38,11 @@ extern "C" int getSizeOfDiveTrack();
 
 MapScreen_ex* mapScreen;
 
-extern const unsigned short lily_wraysbury_all[];
-extern const unsigned short lily_wraysbury_N[];
-extern const unsigned short lily_wraysbury_SE[];
-extern const unsigned short lily_wraysbury_S[];
-extern const unsigned short lily_wraysbury_SW[];
-extern const unsigned short lily_wraysbury_W[];
-extern const unsigned short Model_600x400[];
-extern const unsigned short bride_600x342[];
-extern const unsigned short Colorful_590x450[];
-extern const unsigned short lion_600x400[];
-extern const unsigned short visualCheck_410x304[];
+extern const uint16_t Model_600x400[];
+extern const uint16_t bride_600x342[];
+extern const uint16_t Colorful_590x450[];
+extern const uint16_t lion_600x400[];
+extern const uint16_t visualCheck_410x304[];
 
 class geo_location
 {
@@ -63,6 +60,7 @@ int testIteration=0;
 
 void cycleTrackIndex();
 void amoledTestRotatePhotos();
+void amoledTestScroll();
 
 void setup()
 {
@@ -70,7 +68,7 @@ void setup()
   Serial.flush();
   delay(50);
 
-#ifdef BUILD_MAPSCREEN_T4
+#if BUILD_MAPSCREEN_T4 == 1
   amoled.begin();
   amoled.setBrightness(255);
   mapScreen = new MapScreen_T4(tft,amoled);
@@ -177,54 +175,54 @@ void cycleTrackIndex()
   pos.la -= 0.00002;
 }
 
-#ifdef BUILD_MAPSCREEN_T4
+#if BUILD_MAPSCREEN_T4 == 1
 
-void amoledPushImage(const uint16_t* map,const int width,int height)
+void amoledPushImage(TFT_eSprite* back, const uint16_t* image,const int width,int height)
 {
-  amoled.pushColors(0,0,width,height,const_cast<uint16_t*>(map));
-}
+  back->fillSprite(TFT_BLACK);
+  back->setAddrWindow(0,0,width,height);
+  back->pushImage(0,0,width,height,image);
 
-void amoledDisplayImageWithSprite(const uint16_t* image,int width, int height)
-{
-  TFT_eSprite* sprite = new TFT_eSprite(&tft);
-  sprite->createSprite(width,height);
-  sprite->pushImage(0,0,width,height,image);
-
-  amoled.pushColors(0,0,width,height,(uint16_t*)(sprite->getPointer()));
-  delete sprite; sprite=nullptr;
+  amoled.pushColors(0,0,amoled.width(),amoled.height(),static_cast<uint16_t*>(back->getPointer()));
 }
 
 void amoledTestRotatePhotos()
 {
-  repeat:
-  amoledDisplayImageWithSprite(Model_600x400,600,400);
-  delay(3000);
-  amoledPushImage(bride_600x342,600,342);
-  delay(3000);
-  amoledPushImage(Colorful_590x450,590,450);
-  delay(3000);
-  amoledPushImage(lion_600x400,600,400);
-  delay(3000);
-  amoledPushImage(visualCheck_410x304,410,304);
-  delay(3000);
-  mapScreen->drawFeaturesOnSpecifiedMapToScreen(0);
-  delay(3000);
-  mapScreen->drawFeaturesOnSpecifiedMapToScreen(1);
-  delay(3000);
-  mapScreen->drawFeaturesOnSpecifiedMapToScreen(2);
-  delay(3000);
-  mapScreen->drawFeaturesOnSpecifiedMapToScreen(3);
-  delay(3000);
-  mapScreen->drawFeaturesOnSpecifiedMapToScreen(4);
-  delay(3000);
-  mapScreen->drawFeaturesOnSpecifiedMapToScreen(5);
-  delay(3000);
-  mapScreen->drawFeaturesOnSpecifiedMapToScreen(6);
-  delay(3000);
-  mapScreen->drawFeaturesOnSpecifiedMapToScreen(7);
-  delay(3000);
-  goto repeat;
+  TFT_eSprite* back = new TFT_eSprite(&tft);
+  back->createSprite(amoled.width(),amoled.height());
+  back->fillSprite(TFT_BLACK);
+
+  while(true)
+  {
+    amoledPushImage(back, Model_600x400,600,400);
+    delay(3000);
+    amoledPushImage(back, bride_600x342,600,342);
+    delay(3000);
+    amoledPushImage(back, Colorful_590x450,590,450);
+    delay(3000);
+    amoledPushImage(back, lion_600x400,600,400);
+    delay(3000);
+    amoledPushImage(back, visualCheck_410x304,410,304);
+    delay(3000);
+    mapScreen->drawFeaturesOnSpecifiedMapToScreen(0);
+    delay(3000);
+    mapScreen->drawFeaturesOnSpecifiedMapToScreen(1);
+    delay(3000);
+    mapScreen->drawFeaturesOnSpecifiedMapToScreen(2);
+    delay(3000);
+    mapScreen->drawFeaturesOnSpecifiedMapToScreen(3);
+    delay(3000);
+    mapScreen->drawFeaturesOnSpecifiedMapToScreen(4);
+    delay(3000);
+    mapScreen->drawFeaturesOnSpecifiedMapToScreen(5);
+    delay(3000);
+    mapScreen->drawFeaturesOnSpecifiedMapToScreen(6);
+    delay(3000);
+    mapScreen->drawFeaturesOnSpecifiedMapToScreen(7);
+    delay(3000);
+  }
 }
+
 
 void amoledTestScroll()
 {
