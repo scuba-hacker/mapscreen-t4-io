@@ -90,7 +90,7 @@ void setup()
 
 void loop()
 { 
-  const bool testZoom = false;
+  const bool testZoom = true;
 
   mapScreen->setTargetWaypointByLabel("Sub"); // Cafe Jetty
 
